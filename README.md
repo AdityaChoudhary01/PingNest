@@ -1,5 +1,5 @@
 # ✨ Full Stack Realtime Chat App ✨
-#LiveDemo= https://chat-app-adityachoudhary.netlify.app/
+#LiveDemo= https://pingnest.netlify.app/
 
 Highlights:
 
