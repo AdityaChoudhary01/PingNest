@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User } from "lucide-react";
-import Compressor from "compressorjs";
 
 const ProfilePage = () => {
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
@@ -11,21 +10,14 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    new Compressor(file, {
-      quality: 0.6,
-      success(result) {
-        const reader = new FileReader();
-        reader.readAsDataURL(result);
-        reader.onload = async () => {
-          const base64Image = reader.result;
-          setSelectedImg(base64Image);
-          await updateProfile({ profilePic: base64Image });
-        };
-      },
-      error(err) {
-        console.log(err.message);
-      },
-    });
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = async () => {
+      const base64Image = reader.result;
+      setSelectedImg(base64Image);
+      await updateProfile({ profilePic: base64Image });
+    };
   };
 
   return (
