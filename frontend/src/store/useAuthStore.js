@@ -91,7 +91,6 @@ export const useAuthStore = create((set, get) => ({
       query: {
         userId: authUser._id,
       },
-      // You can keep `transports` or remove it, as `websocket` is the default.
       transports: ["websocket", "polling"],
     });
     socket.connect();
