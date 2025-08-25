@@ -17,6 +17,8 @@ export const useChatStore = create((set, get) => ({
       set({ users: res.data });
     } catch (error) {
       toast.error(error.response.data.message);
+      // Ensure users state is always an array on error to prevent UI crash
+      set({ users: [] });
     } finally {
       set({ isUsersLoading: false });
     }
@@ -48,6 +50,7 @@ export const useChatStore = create((set, get) => ({
     if (!selectedUser) return;
 
     const socket = useAuthStore.getState().socket;
+    if (!socket) return; // Ensure socket exists before listening
 
     socket.on("newMessage", (newMessage) => {
       const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
@@ -61,7 +64,9 @@ export const useChatStore = create((set, get) => ({
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
-    socket.off("newMessage");
+    if (socket) {
+      socket.off("newMessage");
+    }
   },
 
   setSelectedUser: (selectedUser) => set({ selectedUser }),
