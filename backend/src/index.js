@@ -23,17 +23,11 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      const allowedOrigins = [
-        "http://localhost:5173", // Development URL
-        "https://pingnest.netlify.app", // Example production URL
-      ];
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-        return callback(new Error(msg), false);
+      if (!origin || origin.endsWith("netlify.app") || origin.includes("localhost")) {
+        return callback(null, true);
       }
-      return callback(null, true);
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
     },
     credentials: true,
   })
