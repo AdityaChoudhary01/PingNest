@@ -15,9 +15,9 @@ export const useAuthStore = create((set, get) => ({
   socket: null,
 
   checkAuth: async () => {
+    set({ isCheckingAuth: true });
     try {
       const res = await axiosInstance.get("/auth/check");
-
       set({ authUser: res.data });
       get().connectSocket();
     } catch (error) {
@@ -48,7 +48,6 @@ export const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.post("/auth/login", data);
       set({ authUser: res.data });
       toast.success("Logged in successfully");
-
       get().connectSocket();
     } catch (error) {
       toast.error(error.response.data.message);
@@ -83,23 +82,45 @@ export const useAuthStore = create((set, get) => ({
   },
 
   connectSocket: () => {
-    const { authUser } = get();
-    if (!authUser || get().socket?.connected) return;
+    const { authUser, socket } = get();
+    // Only connect if authenticated and socket is not already connected
+    if (!authUser || (socket && socket.connected)) {
+      return;
+    }
 
-    const socket = io(BASE_URL, {
+    const newSocket = io(BASE_URL, {
       query: {
         userId: authUser._id,
       },
     });
-    socket.connect();
+    newSocket.connect();
 
-    set({ socket: socket });
+    set({ socket: newSocket });
 
-    socket.on("getOnlineUsers", (userIds) => {
+    newSocket.on("getOnlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
     });
+    
+    // Listen for disconnects and try to reconnect
+    newSocket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+      // Reconnect logic: wait a bit and try again
+      setTimeout(() => {
+        const { authUser: currentAuthUser } = get();
+        if (currentAuthUser && !get().socket?.connected) {
+          get().connectSocket();
+        }
+      }, 5000); // Wait 5 seconds before attempting to reconnect
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.log("Socket connection error:", err.message);
+    });
   },
+
   disconnectSocket: () => {
-    if (get().socket?.connected) get().socket.disconnect();
+    if (get().socket?.connected) {
+      get().socket.disconnect();
+    }
   },
 }));
