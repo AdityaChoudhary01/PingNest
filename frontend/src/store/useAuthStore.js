@@ -88,39 +88,48 @@ export const useAuthStore = create((set, get) => ({
       return;
     }
 
+    console.log("Connecting WebSocket...");
     const newSocket = io(BASE_URL, {
       query: {
         userId: authUser._id,
       },
     });
-    newSocket.connect();
 
     set({ socket: newSocket });
 
     newSocket.on("getOnlineUsers", (userIds) => {
+      console.log("Received online users update:", userIds);
       set({ onlineUsers: userIds });
     });
     
+    newSocket.on("connect", () => {
+      console.log("WebSocket connected successfully:", newSocket.id);
+    });
+
     // Listen for disconnects and try to reconnect
     newSocket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
-      // Reconnect logic: wait a bit and try again
-      setTimeout(() => {
-        const { authUser: currentAuthUser } = get();
-        if (currentAuthUser && !get().socket?.connected) {
-          get().connectSocket();
-        }
-      }, 5000); // Wait 5 seconds before attempting to reconnect
+      console.log("WebSocket disconnected:", reason);
+      // Attempt to reconnect if the user is still authenticated
+      if (get().authUser) {
+        console.log("Attempting to reconnect WebSocket in 5 seconds...");
+        setTimeout(() => {
+          if (get().authUser && !get().socket?.connected) {
+            get().connectSocket();
+          }
+        }, 5000); // Wait 5 seconds before attempting to reconnect
+      }
     });
 
     newSocket.on("connect_error", (err) => {
-      console.log("Socket connection error:", err.message);
+      console.log("WebSocket connection error:", err.message);
     });
   },
 
   disconnectSocket: () => {
     if (get().socket?.connected) {
+      console.log("Disconnecting WebSocket...");
       get().socket.disconnect();
+      set({ socket: null, onlineUsers: [] });
     }
   },
-}));
+}));s
